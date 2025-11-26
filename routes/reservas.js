@@ -56,11 +56,11 @@ router.post('/nova/:quartoId', requireAuth, async (req, res, next) => {
     if (!hospede) {
       hospede = await Hospede.create({
         nome: nome || req.session.user.nome,
-        CPF: CPF || '',
-        telefone: telefone || '',
+        CPF: CPF || '' || req.session.user.CPF,
+        telefone: telefone || req.session.user.telefone,
         email: req.session.user.email,
-        endereco: endereco || '',
-        dataNascimento: '',
+        endereco: endereco || req.session.user.endereco,
+        dataNascimento: '' || req.session.user.dataNascimento,
         dataCadastro: new Date()
       });
     }
