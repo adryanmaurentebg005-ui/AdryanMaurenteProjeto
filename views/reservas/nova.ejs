@@ -1,0 +1,123 @@
+<%- include('../partials/header') %>
+
+<div class="reserva-page">
+  <div class="container">
+    <h1>Fazer Reserva</h1>
+    
+    <% if (error) { %>
+      <div class="alert alert-error">
+        <%= error %>
+      </div>
+    <% } %>
+    
+    <div class="reserva-grid">
+      <div class="quarto-info-card">
+        <h3>Quarto <%= quarto.numero %> - <%= quarto.tipo %></h3>
+        <img src="<%= quarto.imagem %>" alt="Quarto <%= quarto.numero %>">
+        <p><%= quarto.descricao %></p>
+        
+        <div class="info-detalhes">
+          <p><strong>Capacidade:</strong> <%= quarto.capacidade %> pessoas</p>
+          <p><strong>Diária:</strong> R$ <%= quarto.precoDiaria %></p>
+          <div>
+            <strong>Comodidades:</strong>
+            <ul>
+              <% quarto.comodidades.forEach(c => { %>
+                <li><%= c %></li>
+              <% }) %>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="reserva-form-card">
+        <h3>Dados da Reserva</h3>
+        <form action="/reservas/nova/<%= quarto._id %>" method="POST" id="formReserva">
+          <div class="form-group">
+            <label for="nome">Nome Completo</label>
+            <input type="text" id="nome" name="nome" value="<%= user.nome %>" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="cpf">CPF</label>
+            <input type="text" id="cpf" name="cpf" required placeholder="000.000.000-00">
+          </div>
+          
+          <div class="form-group">
+            <label for="telefone">Telefone</label>
+            <input type="text" id="telefone" name="telefone" required placeholder="(00) 00000-0000">
+          </div>
+          
+          <div class="form-group">
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" name="endereco" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="dataCheckIn">Data de Check-in</label>
+            <input type="date" id="dataCheckIn" name="dataCheckIn" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="dataCheckOut">Data de Check-out</label>
+            <input type="date" id="dataCheckOut" name="dataCheckOut" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="numeroHospedes">Número de Hóspedes</label>
+            <input type="number" id="numeroHospedes" name="numeroHospedes" min="1" max="<%= quarto.capacidade %>" value="1" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="metodoPagamento">Método de Pagamento</label>
+            <select id="metodoPagamento" name="metodoPagamento" required>
+              <option value="">Selecione</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="PIX">PIX</option>
+            </select>
+          </div>
+          
+          <div class="resumo-valor">
+            <p><strong>Período:</strong> <span id="dias">0</span> dia(s)</p>
+            <p><strong>Valor por noite:</strong> R$ <%= quarto.precoDiaria %></p>
+            <p class="total"><strong>Total:</strong> R$ <span id="valorTotal">0.00</span></p>
+          </div>
+          
+          <button type="submit" class="btn-primary btn-block">Confirmar Reserva</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const precoDiaria = <%= quarto.precoDiaria %>;
+  const checkInInput = document.getElementById('dataCheckIn');
+  const checkOutInput = document.getElementById('dataCheckOut');
+  
+  // Definir data mínima como hoje
+  const hoje = new Date().toISOString().split('T')[0];
+  checkInInput.min = hoje;
+  
+  function calcularTotal() { 
+    const checkIn = new Date(checkInInput.value);
+    const checkOut = new Date(checkOutInput.value);
+    
+    if (checkIn && checkOut && checkOut > checkIn) {
+      const dias = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+      const total = dias * precoDiaria;
+      
+      document.getElementById('dias').textContent = dias;
+      document.getElementById('valorTotal').textContent = total.toFixed(2);
+      
+      checkOutInput.min = checkInInput.value;
+    }
+  }
+  
+  checkInInput.addEventListener('change', calcularTotal);
+  checkOutInput.addEventListener('change', calcularTotal);
+</script>
+
+<%- include('../partials/footer') %>
