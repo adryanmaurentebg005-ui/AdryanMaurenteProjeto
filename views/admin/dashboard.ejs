@@ -1,0 +1,80 @@
+<%- include('../partials/header') %>
+
+<div class="admin-layout">
+  <%- include('sidebar') %>
+  
+  <div class="admin-content">
+    <h1>Dashboard</h1>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+          <h3><%= stats.hospedes %></h3>
+          <p>Total de Hóspedes</p>
+          <small>Cadastrados no sistema</small>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-bed"></i>
+        </div>
+        <div class="stat-info">
+          <h3><%= stats.quartosDisponiveis %>/<%= stats.quartos %></h3>
+          <p>Quartos</p>
+          <small>Disponíveis</small>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-calendar"></i>
+        </div>
+        <div class="stat-info">
+          <h3><%= stats.reservas %></h3>
+          <p>Reservas</p>
+          <small><%= stats.reservasPendentes %> pendentes</small>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-info">
+          <h3>R$ <%= stats.receitaTotal.toFixed(2) %></h3>
+          <p>Receita Total</p>
+          <small>Pagamentos aprovados</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="dashboard-cards">
+      <div class="card">
+        <h3>Visão Geral</h3>
+        <div class="card-content">
+          <div class="info-row">
+            <span>Taxa de Ocupação</span>
+            <strong><%= stats.quartos > 0 ? Math.round(((stats.quartos - stats.quartosDisponiveis) / stats.quartos) * 100) : 0 %>%</strong>
+          </div>
+          <div class="info-row">
+            <span>Receita Média por Reserva</span>
+            <strong>R$ <%= stats.reservas > 0 ? (stats.receitaTotal / stats.reservas).toFixed(2) : '0.00' %></strong>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3>Ações Rápidas</h3>
+        <div class="card-content">
+          <p>Use o menu lateral para gerenciar hóspedes, quartos, reservas e pagamentos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

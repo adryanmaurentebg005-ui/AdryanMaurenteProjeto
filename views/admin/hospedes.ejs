@@ -1,0 +1,176 @@
+<%- include('../partials/header') %>
+
+<div class="admin-layout">
+  <%- include('sidebar') %>
+  
+  <div class="admin-content">
+    <div class="content-header">
+      <h1>Gerenciar Hóspedes</h1>
+      <button class="btn-primary" onclick="abrirModal()">
+        <i class="fas fa-plus"></i> Novo Hóspede
+      </button>
+    </div>
+    
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Data de Nascimento</th>
+            <th>Email</th>
+            <th>Telefone</th>
+            <th>Senha</th>
+            <th>Data Cadastro</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+
+        
+
+        <tbody> 
+          <% if (hospedes.length === 0) { %>
+            <tr>
+              <td colspan="6" class="text-center">Nenhum hóspede cadastrado</td>
+            </tr>
+          <% } else { %>
+            <% hospedes.forEach(hospede => { %>
+              <tr>
+                <td><%= hospede.nome %></td>
+                <td><%= hospede.CPF %></td>
+<td><%= new Date(hospede.dataNascimento).toLocaleDateString('pt-BR') %></td>
+                <td><%= hospede.email %></td>
+                <td><%= hospede.telefone %></td>
+                <td><%= hospede.senha %></td>
+                <td><%= new Date(hospede.dataCadastro).toLocaleDateString('pt-BR') %></td>
+                <td class="acoes">
+                  <button class="btn-icon" onclick="editarHospede('<%= hospede._id %>')" >
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <form action="/admin/hospedes/<%= hospede._id %>/deletar" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza?')">
+                    <button type="submit" class="btn-icon btn-danger">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>   
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modalHospede" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Novo Hóspede</h3>
+      <button class="modal-close" onclick="fecharModal()">&times;</button>
+    </div>
+    <form id="formHospede" method="POST">
+      <input type="hidden" id="hospedeId" name="hospedeId">
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nome">Nome Completo</label>
+          <input type="text" id="nome" name="nome" required>
+        </div>
+        <div class="form-group">
+          <label for="CPF">CPF</label>
+          <input type="text" id="CPF" name="CPF" required  oninput="formatarCPF(this)">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telefone">Telefone</label>
+          <input type="text" id="telefone" name="telefone" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="endereco">Endereço</label>
+        <input type="text" id="endereco" name="endereco" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="dataNascimento">Data de Nascimento</label>
+        <input type="date" id="dataNascimento" name="dataNascimento" >
+      </div>
+
+      <div class="form-group">
+        <label for="senha">Senha</label>
+        <input type="text" id="senha" name="senha" required>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+
+  const hospedes = <%- JSON.stringify(hospedes) %>;
+  
+  function abrirModal() {
+    document.getElementById('modalHospede').style.display = 'flex';
+    document.getElementById('modalTitle').textContent = 'Novo Hóspede';
+    document.getElementById('formHospede').action = '/admin/hospedes';
+    document.getElementById('formHospede').reset();
+  }
+  
+  function editarHospede(_id) {
+    const hospede = hospedes.find(h => h._id === _id);
+    if (!hospede) return;
+    
+    document.getElementById('modalHospede').style.display = 'flex';
+    document.getElementById('modalTitle').textContent = 'Editar Hóspede';
+    document.getElementById('formHospede').action = `/admin/hospedes/${_id}/editar`;
+    
+    document.getElementById('nome').value = hospede.nome;
+    document.getElementById('CPF').value = hospede.CPF;
+    document.getElementById('telefone').value = hospede.telefone;
+    document.getElementById('email').value = hospede.email;
+    document.getElementById('endereco').value = hospede.endereco;
+    document.getElementById('dataNascimento').value = new Date(hospede.dataNascimento).toISOString().split('T')[0];
+    document.getElementById('senha').value = hospede.senha;
+  }
+   
+  function fecharModal() {
+    document.getElementById('modalHospede').style.display = 'none';
+  }
+  
+  window.onclick = function(event) {
+    const modal = document.getElementById('modalHospede');
+    if (event.target === modal) {
+      fecharModal();
+    }
+  }
+
+
+function formatarCPF(campo) {
+  let cpf = campo.value.replace(/\D/g, ""); // remove tudo que não for número
+
+  if (cpf.length > 11) cpf = cpf.slice(0, 11); // limita a 11 dígitos
+
+  cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+  cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+  cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+
+  campo.value = cpf;
+}
+
+  
+</script>
+
+<%- include('../partials/footer') %>
