@@ -1,5 +1,75 @@
 # 🏨 Sistema de Gerenciamento de Pousada
 
+Projeto fullstack com backend em Node.js/Express + templates EJS e frontend gerenciado com Vite.
+
+Este README foi atualizado para refletir a estrutura atual do repositório e instruções para rodar o projeto localmente.
+
+## Requisitos
+- Node.js v16+ (recomendado)
+- npm
+
+## Instalação
+No diretório do projeto:
+
+```bash
+npm install
+```
+
+## Execução
+- Iniciar API / servidor EJS:
+
+```bash
+npm start
+# servidor Express roda em http://localhost:3111 por padrão
+```
+
+- Desenvolvimento frontend (Vite):
+
+```bash
+npm run dev
+```
+
+- Hot-reload do backend (opcional, se `nodemon` estiver instalado):
+
+```bash
+npm run server
+```
+
+## Estrutura do repositório (atual)
+
+```
+/ (repo root)
+├── package.json                # Scripts e dependências (start, server, dev, build)
+├── package-lock.json
+├── vercel.json                 # Configuração de deploy (opcional)
+├── README.md
+├── api/                        # Backend Express + views EJS
+│   ├── server.js               # Servidor Express (porta 3111)
+│   ├── routes/                 # Rotas (index, auth, quartos, reservas, admin, perfil)
+│   ├── models/                 # Modelos (Hospede.js, Quarto.js, Reserva.js, Pagamento.js)
+│   ├── config/                 # `conexao.js` (config DB)
+│   ├── public/                 # Arquivos estáticos (css, js, imagens)
+│   └── views/                  # Templates EJS (index.ejs, admin/, auth/, etc.)
+├── components/                 # Componentes frontend (React / UI)
+├── styles/                     # Estilos globais
+└── AdryanMaurenteProjeto/      # Subprojeto / pasta filha (antes um submodule)
+
+```
+
+Observações
+- O servidor principal está em `api/server.js` e o `package.json` do projeto define `type: "module"`.
+- A porta do servidor é `3111` por padrão (veja `api/server.js`).
+- Se você deseja incluir o conteúdo de `AdryanMaurenteProjeto` neste repositório, copie a pasta sem o diretório `.git` e commite.
+
+## Próximos passos sugeridos
+- Verificar variáveis de ambiente e configurações de conexão ao banco (arquivo em `api/config/`).
+- Adicionar instruções de deploy específicas, se necessário.
+
+---
+
+Se quiser, eu posso commitar esta alteração no `README.md` agora. Quer que eu faça o commit? 
+# 🏨 Sistema de Gerenciamento de Pousada
+
 Sistema completo de gerenciamento de pousada desenvolvido com **Node.js**, **Express**, **EJS**, HTML, CSS e JavaScript puro.
 
 ## 📋 Funcionalidades

@@ -30,15 +30,21 @@
             "@radix-ui/react-toggle": "^1.1.2",
             "@radix-ui/react-toggle-group": "^1.1.2",
             "@radix-ui/react-tooltip": "^1.1.8",
+            "body-parser": "^2.2.1",
             "class-variance-authority": "^0.7.1",
             "clsx": "*",
             "cmdk": "^1.1.1",
+            "ejs": "^3.1.10",
             "embla-carousel-react": "^8.6.0",
+            "express": "^5.2.1",
+            "express-session": "^1.18.2",
             "input-otp": "^1.4.2",
             "lucide-react": "^0.487.0",
+            "method-override": "^3.0.0",
             "mongodb": "^6.3.0",
             "mongoose": "8.3.4",
             "next-themes": "^0.4.6",
+            "nodemon": "^3.1.11",
             "react": "^18.3.1",
             "react-day-picker": "^8.10.1",
             "react-dom": "^18.3.1",
@@ -55,6 +61,8 @@
             "vite": "6.3.5"
       },
       "scripts": {
+            "start": "node api/server.js",
+            "server": "nodemon api/server.js",
             "dev": "vite",
             "build": "vite build"
       }
