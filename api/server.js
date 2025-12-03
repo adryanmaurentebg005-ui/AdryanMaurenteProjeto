@@ -1,3 +1,5 @@
+import { createServer } from 'http';
+
 import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
@@ -25,7 +27,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
-
+//po
  
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
@@ -33,12 +35,12 @@ app.use((req, res, next) => {
   next();
 });
 
-import indexRoutes from './routes/index.js';
-import authRoutes from './routes/auth.js';
-import quartosRoutes from './routes/quartos.js';
-import reservasRoutes from './routes/reservas.js';
-import adminRoutes from './routes/admin.js';
-import perfilRoutes from './routes/perfil.js';
+import indexRoutes from '../routes/index.js';
+import authRoutes from '../routes/auth.js';
+import quartosRoutes from '../routes/quartos.js';
+import reservasRoutes from '../routes/reservas.js';
+import adminRoutes from '../routes/admin.js';
+import perfilRoutes from '../routes/perfil.js';
 
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
