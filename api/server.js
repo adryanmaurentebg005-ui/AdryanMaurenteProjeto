@@ -26,7 +26,7 @@ app.use(methodOverride('_method'));
 app.use(session({
   secret: 'pousada-secret-key-2024',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   store: new MongoStore({
     mongoUrl: 'mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryWrites=true&w=majority&appName=Cluster0',
     touchAfter: 24 * 3600 // lazy session update
