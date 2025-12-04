@@ -160,7 +160,12 @@ router.post('/cadastro', async (req, res) => {
 
 // ===================== LOGOUT =====================
 router.get('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/'));
+  req.session.destroy(err => {
+    if (err) console.error('Erro ao destruir sessão:', err);
+    res.clearCookie('connect.sid', { path: '/' });
+    res.redirect('/');
+  });
 });
+
 
 export default router;
