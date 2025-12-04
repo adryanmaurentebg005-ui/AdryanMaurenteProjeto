@@ -54,6 +54,29 @@ app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'favicon.png'));
 });
 
+// Debug endpoint to inspect session and session store (temporary)
+app.get('/debug-session', async (req, res) => {
+  const sid = req.sessionID;
+  const cookie = req.headers && req.headers.cookie;
+  let sessionDoc = null;
+  try {
+    // connect-mongo stores sessions in collection named 'sessions' by default
+    const db = mongoose.connection.db;
+    if (db) {
+      sessionDoc = await db.collection('sessions').findOne({ _id: sid });
+    }
+  } catch (err) {
+    console.warn('DEBUG: error reading sessions collection', err && err.message);
+  }
+
+  res.json({
+    sessionID: sid,
+    cookieHeader: cookie || null,
+    sessionUser: req.session && req.session.user ? req.session.user : null,
+    sessionDoc
+  });
+});
+
 import indexRoutes from '../routes/index.js';
 import authRoutes from '../routes/auth.js';
 import quartosRoutes from '../routes/quartos.js';
