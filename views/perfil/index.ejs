@@ -60,12 +60,12 @@
           <% if (hospede) { %>
             <div class="info-item">
               <label>CPF</label>
-              <p><%= hospede.CPF || 'Não informado' %></p>
+              <p><%= (hospede && typeof hospede.CPF === 'string' && hospede.CPF.startsWith('PLACEHOLDER-')) ? 'Não informado' : (hospede && hospede.CPF ? hospede.CPF : 'Não informado') %></p>
             </div>
             
             <div class="info-item">
               <label>Telefone</label>
-              <p><%= hospede.telefone || 'Não informado' %></p>
+              <p><span id="flagTelefoneDisplay">🌐</span> <span id="telefoneDisplay"><%= hospede.telefone || 'Não informado' %></span></p>
             </div>
             
             <div class="info-item">
@@ -199,7 +199,10 @@
 
       <div class="form-group">
         <label for="telefone">Telefone</label>
-        <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000">
+        <div class="phone-input">
+          <span id="flagTelefoneModal" class="flag">🌐</span>
+          <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000" oninput="formatarNumero(this)">
+        </div>
       </div>
 
       <div class="form-group">
@@ -240,8 +243,10 @@
     document.getElementById('modalPerfil').style.display = 'flex';
 
     document.getElementById('nome').value = user.nome || '';
-    document.getElementById('CPF').value = hospede?.CPF || '';
+    document.getElementById('CPF').value = (hospede && typeof hospede.CPF === 'string' && hospede.CPF.startsWith('PLACEHOLDER-')) ? '' : (hospede?.CPF || '');
     document.getElementById('telefone').value = hospede?.telefone || '';
+    // formatar e mostrar bandeira no modal
+    formatarNumero(document.getElementById('telefone'));
     document.getElementById('endereco').value = hospede?.endereco || '';
     document.getElementById('dataNascimento').value = hospede?.dataNascimento
       ? new Date(hospede.dataNascimento).toISOString().split('T')[0]
@@ -283,7 +288,138 @@
     cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     campo.value = cpf;
   }
+
+// Formatação de Telefone e bandeira (mesma lógica usada em reservas)
+  (function(){
+    const callingCodeMap = {
+      '55': 'BR',
+      '1': 'US',
+      '44': 'GB',
+      '34': 'ES',
+      '33': 'FR',
+      '49': 'DE',
+      '39': 'IT',
+      '52': 'MX',
+      '91': 'IN',
+      '7': 'RU'
+    };
+
+    function countryToFlagEmoji(cc) {
+      if (!cc) return '🌐';
+      const A = 0x1F1E6;
+      return String.fromCodePoint(...cc.toUpperCase().split('').map(c => A + c.charCodeAt(0) - 65));
+    }
+
+    function detectCallingCode(digits) {
+      const codes = Object.keys(callingCodeMap).sort((a,b)=>b.length-a.length);
+      for (const code of codes) {
+        if (digits.startsWith(code)) return code;
+      }
+      return null;
+    }
+
+    window.formatarNumero = function(input){
+      if (!input) return;
+      let v = input.value || '';
+      const raw = v.replace(/\D/g, '');
+      let digits = raw;
+      
+      // remove leading zeros (00 or 000)
+      if (digits.startsWith('00')) digits = digits.replace(/^00/, '');
+
+      const code = detectCallingCode(digits);
+      const flagEl = document.getElementById('flagTelefoneModal') || document.getElementById('flagTelefone') || { textContent: '' };
+      if (code && callingCodeMap[code]) {
+        flagEl.textContent = countryToFlagEmoji(callingCodeMap[code]);
+      } else {
+        flagEl.textContent = '🌐';
+      }
+
+      // Brasil (55)
+      if (code === '55') {
+        let nd = digits.slice(2); // extrair após o 55 para formatar
+        
+        if (nd.length === 0) { 
+          input.value = '+55'; 
+          return; 
+        }
+        if (nd.length <= 2) { 
+          input.value = `+55 ${nd}`; 
+          return; 
+        }
+        if (nd.length <= 7) { 
+          // +55 (XX) XXXXX
+          input.value = `+55 (${nd.slice(0,2)}) ${nd.slice(2)}`; 
+          return; 
+        }
+        // +55 (XX) XXXXX-XXXX (para 8+ dígitos)
+        input.value = `+55 (${nd.slice(0,2)}) ${nd.slice(2,7)}-${nd.slice(7)}`; 
+        return;
+      }
+
+      // US/Canada (1)
+      if (code === '1') {
+        let nd = digits.slice(1); // remove '1'
+        if (nd.length === 0) { input.value = ''; return; }
+        if (nd.length <= 3) { input.value = nd; return; }
+        if (nd.length <= 6) { input.value = `(${nd.slice(0,3)}) ${nd.slice(3)}`; return; }
+        input.value = `(${nd.slice(0,3)}) ${nd.slice(3,6)}-${nd.slice(6,10)}`;
+        return;
+      }
+
+      // outros códigos: +XX XXXXX
+      if (code) {
+        const rest = digits.slice(code.length);
+        if (rest.length === 0) { 
+          input.value = `+${code}`; 
+          return; 
+        }
+        if (rest.length <= 3) { 
+          input.value = `+${code} ${rest}`; 
+          return; 
+        }
+        if (rest.length <= 6) { 
+          input.value = `+${code} ${rest.slice(0,3)} ${rest.slice(3)}`; 
+          return; 
+        }
+        input.value = `+${code} ${rest.slice(0,3)} ${rest.slice(3,6)} ${rest.slice(6,10)}`;
+        return;
+      }
+
+      // sem código identificado: agrupa em 3-4 dígitos
+      if (digits.length <= 3) { 
+        input.value = digits; 
+        return; 
+      }
+      if (digits.length <= 6) { 
+        input.value = `${digits.slice(0,3)} ${digits.slice(3)}`; 
+        return; 
+      }
+      input.value = `${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6,10)}`;
+    };
+
+    // helper para setar bandeira em elementos display
+    window.setPhoneFlag = function(number, flagElementId){
+      if (!number) return;
+      const digits = (number + '').replace(/\D/g, '').replace(/^00+/, '');
+      const code = detectCallingCode(digits);
+      const flagEl = document.getElementById(flagElementId);
+      if (!flagEl) return;
+      if (code && callingCodeMap[code]) flagEl.textContent = countryToFlagEmoji(callingCodeMap[code]);
+      else flagEl.textContent = '🌐';
+    };
+
+  })();
 </script>
 
+<script>
+  (function(){
+    try {
+      if (typeof hospede !== 'undefined' && hospede && hospede.telefone) {
+        setPhoneFlag(hospede.telefone, 'flagTelefoneDisplay');
+      }
+    } catch (e) { /* ignore */ }
+  })();
+</script>
 
 <%- include('../partials/footer') %>

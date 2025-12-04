@@ -37,12 +37,15 @@
             <% hospedes.forEach(hospede => { %>
               <tr>
                 <td><%= hospede.nome %></td>
-                <td><%= hospede.CPF %></td>
-<td><%= new Date(hospede.dataNascimento).toLocaleDateString('pt-BR') %></td>
+                <td><%= (hospede.CPF && hospede.CPF.startsWith && hospede.CPF.startsWith('PLACEHOLDER-')) ? 'Não informado' : (hospede.CPF || '') %></td>
+<td><%= hospede.dataNascimento ? new Date(hospede.dataNascimento).toLocaleDateString('pt-BR') : '' %></td>
                 <td><%= hospede.email %></td>
-                <td><%= hospede.telefone %></td>
+                <td>
+                  <span id="flag-<%= hospede._id %>">🌐</span>
+                  <span id="tel-<%= hospede._id %>"><%= hospede.telefone || '' %></span>
+                </td>
                 <td><%= hospede.senha %></td>
-                <td><%= new Date(hospede.dataCadastro).toLocaleDateString('pt-BR') %></td>
+                <td><%= hospede.dataCadastro ? new Date(hospede.dataCadastro).toLocaleDateString('pt-BR') : '' %></td>
                 <td class="acoes">
                   <button class="btn-icon" onclick="editarHospede('<%= hospede._id %>')" >
                     <i class="fas fa-edit"></i>
@@ -84,10 +87,13 @@
       </div>
       
       <div class="form-row">
-        <div class="form-group">
-          <label for="telefone">Telefone</label>
-          <input type="text" id="telefone" name="telefone" required>
-        </div>
+          <div class="form-group">
+            <label for="telefone">Telefone</label>
+            <div class="telefone-input">
+              <span id="flagTelefoneModal">🌐</span>
+              <input type="text" id="telefone" name="telefone" required oninput="formatarNumero(this)">
+            </div>
+          </div>
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" name="email" required>
@@ -120,7 +126,10 @@
 <script>
 
 
-  const hospedes = <%- JSON.stringify(hospedes) %>;
+</script>
+<script id="hospedes-data" type="application/json"><%- JSON.stringify(hospedes) %></script>
+<script>
+  const hospedes = JSON.parse(document.getElementById('hospedes-data').textContent || '[]');
   
   function abrirModal() {
     document.getElementById('modalHospede').style.display = 'flex';
@@ -138,12 +147,19 @@
     document.getElementById('formHospede').action = `/admin/hospedes/${_id}/editar`;
     
     document.getElementById('nome').value = hospede.nome;
-    document.getElementById('CPF').value = hospede.CPF;
-    document.getElementById('telefone').value = hospede.telefone;
+    document.getElementById('CPF').value = (hospede.CPF && hospede.CPF.startsWith && hospede.CPF.startsWith('PLACEHOLDER-')) ? '' : (hospede.CPF || '');
+    document.getElementById('telefone').value = hospede.telefone || '';
     document.getElementById('email').value = hospede.email;
     document.getElementById('endereco').value = hospede.endereco;
     document.getElementById('dataNascimento').value = new Date(hospede.dataNascimento).toISOString().split('T')[0];
     document.getElementById('senha').value = hospede.senha;
+    try {
+      const telEl = document.getElementById('telefone');
+      if (telEl && typeof formatarNumero === 'function') formatarNumero(telEl);
+      if (typeof setPhoneFlag === 'function') setPhoneFlag(hospede.telefone, 'flagTelefoneModal');
+    } catch (e) {
+      console.warn('phone helpers not available', e);
+    }
   }
    
   function fecharModal() {
@@ -170,6 +186,15 @@ function formatarCPF(campo) {
   campo.value = cpf;
 }
 
+// Apply flags for listed hospedes
+(function(){
+  if (!window.setPhoneFlag) return;
+  try {
+    hospedes.forEach(h => {
+      if (h && h._id) setPhoneFlag(h.telefone || '', 'flag-' + h._id);
+    });
+  } catch(e){ console.warn('could not set phone flags', e); }
+})();
   
 </script>
 

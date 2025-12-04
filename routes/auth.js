@@ -89,13 +89,16 @@ for (let i = 0; i < 11; i++) {
   randomString += chars.charAt(Math.floor(Math.random() * chars.length));
 }
 
+// Use a clear placeholder marker so we can treat it as "no CPF" elsewhere
+const placeholderCPF = `PLACEHOLDER-${randomString}`;
+
     await Hospede.create({ 
       nome, 
       email, 
       senha, 
       tipo: 'cliente', 
       dataCadastro: new Date(),
-      CPF: randomString
+      CPF: placeholderCPF
     });
     
     return res.render('auth/cadastro', {

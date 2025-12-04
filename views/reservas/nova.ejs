@@ -33,24 +33,27 @@
       <div class="reserva-form-card">
         <h3>Dados da Reserva</h3>
         <form action="/reservas/nova/<%= quarto._id %>" method="POST" id="formReserva">
-          <div class="form-group">
+          <div class="form-group"> 
             <label for="nome">Nome Completo</label>
-            <input type="text" id="nome" name="nome" value="<%= user.nome %>" required>
+            <input type="text" id="nome" name="nome" value="<%= hospede ? hospede.nome : '' %>" required>
           </div>
           
           <div class="form-group">
             <label for="cpf">CPF</label>
-            <input type="text" id="CPF" name="CPF" value="<%= user.CPF %>" required oninput="formatarCPF(this)">
+            <input type="text" id="CPF" name="CPF" value="<%= (hospede && typeof hospede.CPF === 'string' && hospede.CPF.startsWith('PLACEHOLDER-')) ? '' : (hospede ? hospede.CPF : '') %>" required oninput="formatarCPF(this)">
           </div>
           
           <div class="form-group">
             <label for="telefone">Telefone</label>
-            <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000" value="<%= user.telefone %>" required >
+            <div class="phone-input">
+              <span id="flagTelefone" class="flag">🌐</span>
+              <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000" value="<%= (hospede && typeof hospede.CPF === 'string' && hospede.CPF.startsWith('PLACEHOLDER-')) ? '' : (hospede ? hospede.telefone : '') %>" required oninput="formatarNumero(this)">
+            </div>
           </div>
           
           <div class="form-group">
             <label for="endereco">Endereço</label>
-            <input type="text" id="endereco" name="endereco" value="<%= user.endereco %>" required>
+            <input type="text" id="endereco" name="endereco" value="<%= hospede ? hospede.endereco : '' %>" required>
           </div>
           
           <div class="form-group">
@@ -128,6 +131,136 @@
     cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     campo.value = cpf;
   }
+
+// Formatação de Telefone e bandeira por código do país
+  (function(){
+    const callingCodeMap = {
+      '55': 'BR',
+      '1': 'US',
+      '44': 'GB',
+      '34': 'ES',
+      '33': 'FR',
+      '49': 'DE',
+      '39': 'IT',
+      '52': 'MX',
+      '91': 'IN',
+      '7': 'RU'
+    };
+
+    function countryToFlagEmoji(cc) {
+      if (!cc) return '🌐';
+      const A = 0x1F1E6;
+      return String.fromCodePoint(...cc.toUpperCase().split('').map(c => A + c.charCodeAt(0) - 65));
+    }
+
+    function detectCallingCode(digits) {
+      // check longest first
+      const codes = Object.keys(callingCodeMap).sort((a,b)=>b.length-a.length);
+      for (const code of codes) {
+        if (digits.startsWith(code)) return code;
+      }
+      return null;
+    }
+
+    window.formatarNumero = function(input){
+      if (!input) return;
+      let v = input.value || '';
+      const raw = v.replace(/\D/g, '');
+      let digits = raw;
+
+      // remove leading zeros (00 or 000)
+      if (digits.startsWith('00')) digits = digits.replace(/^00/, '');
+
+      const code = detectCallingCode(digits);
+      const flagEl = document.getElementById('flagTelefone');
+      if (code && callingCodeMap[code]) {
+        flagEl.textContent = countryToFlagEmoji(callingCodeMap[code]);
+      } else {
+        flagEl.textContent = '🌐';
+      }
+
+      // Brasil (55)
+      if (code === '55') {
+        let nd = digits.slice(2); // extrair após o 55 para formatar
+        
+        if (nd.length === 0) { 
+          input.value = '+55'; 
+          return; 
+        }
+        if (nd.length <= 2) { 
+          input.value = `+55 ${nd}`; 
+          return; 
+        }
+        if (nd.length <= 7) { 
+          // +55 (XX) XXXXX
+          input.value = `+55 (${nd.slice(0,2)}) ${nd.slice(2)}`; 
+          return; 
+        }
+        // +55 (XX) XXXXX-XXXX (para 8+ dígitos)
+        input.value = `+55 (${nd.slice(0,2)}) ${nd.slice(2,7)}-${nd.slice(7)}`; 
+        return;
+      }
+
+      // US/Canada (1)
+      if (code === '1') {
+        let nd = digits.slice(1); // remove '1'
+        if (nd.length === 0) { input.value = ''; return; }
+        if (nd.length <= 3) { input.value = nd; return; }
+        if (nd.length <= 6) { input.value = `(${nd.slice(0,3)}) ${nd.slice(3)}`; return; }
+        input.value = `(${nd.slice(0,3)}) ${nd.slice(3,6)}-${nd.slice(6,10)}`;
+        return;
+      }
+
+      // outros códigos: +XX XXXXX
+      if (code) {
+        const rest = digits.slice(code.length);
+        if (rest.length === 0) { 
+          input.value = `+${code}`; 
+          return; 
+        }
+        if (rest.length <= 3) { 
+          input.value = `+${code} ${rest}`; 
+          return; 
+        }
+        if (rest.length <= 6) { 
+          input.value = `+${code} ${rest.slice(0,3)} ${rest.slice(3)}`; 
+          return; 
+        }
+        input.value = `+${code} ${rest.slice(0,3)} ${rest.slice(3,6)} ${rest.slice(6,10)}`;
+        return;
+      }
+
+      // sem código identificado: agrupa em 3-4 dígitos
+      if (digits.length <= 3) { 
+        input.value = digits; 
+        return; 
+      }
+      if (digits.length <= 6) { 
+        input.value = `${digits.slice(0,3)} ${digits.slice(3)}`; 
+        return; 
+      }
+      input.value = `${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6,10)}`;
+    };
+
+    // helper para setar bandeira em elementos display
+    window.setPhoneFlag = function(number, flagElementId){
+      if (!number) return;
+      const digits = (number + '').replace(/\D/g, '').replace(/^00+/, '');
+      const code = detectCallingCode(digits);
+      const flagEl = document.getElementById(flagElementId) || document.getElementById('flagTelefone');
+      if (!flagEl) return;
+      if (code && callingCodeMap[code]) flagEl.textContent = countryToFlagEmoji(callingCodeMap[code]);
+      else flagEl.textContent = '🌐';
+    };
+  })();
+
+  // set flag on page load if telefone exists
+  (function(){
+    try {
+      const telEl = document.getElementById('telefone');
+      if (telEl && telEl.value) setPhoneFlag(telEl.value, 'flagTelefone');
+    } catch(e){}
+  })();
 
 </script>
 

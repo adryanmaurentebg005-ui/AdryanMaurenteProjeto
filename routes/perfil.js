@@ -27,6 +27,10 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const hospede = await Hospede.findOne({ email }).lean();
+    // esconder CPF placeholder na view
+    if (hospede && typeof hospede.CPF === 'string' && hospede.CPF.startsWith('PLACEHOLDER-')) {
+      hospede.CPF = '';
+    }
     if (!hospede) {
       return res.render('perfil/index', {
         title: 'Meu Perfil',
@@ -150,8 +154,11 @@ router.post('/:id/cancelar-reserva', async (req, res, next) => {
     if (reserva) await Quarto.findByIdAndUpdate(reserva.quarto, { status: 'Disponível' });
     
     const quarto = await Quarto.findById(reserva.quarto).lean();
-    const hospede = await Hospede.findById(reserva.hospede).lean();
+    let hospede = await Hospede.findById(reserva.hospede).lean();
     const pagamento = await Pagamento.findOne({ reserva: reserva._id }).lean();
+    if (hospede && typeof hospede.CPF === 'string' && hospede.CPF.startsWith('PLACEHOLDER-')) {
+      hospede.CPF = '';
+    }
 await Reserva.findByIdAndDelete(req.params.id);
    
 res.render('perfil/cancelado', {
