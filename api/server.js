@@ -52,9 +52,11 @@ app.use("/auth", authRoutes);
 app.get("/", (req, res) => {
   res.render("index", {
     title: "Home",
+    page: "home",
     user: req.session.user || null,
   });
 });
+
 
 // ---------- ERRO ----------
 app.use((err, req, res, next) => {
