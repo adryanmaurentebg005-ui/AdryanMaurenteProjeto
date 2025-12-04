@@ -14,6 +14,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3111;
+
+// Wait for MongoDB connection before setting up session store
+let sessionStore;
+const setupSession = (mongoConnection) => {
+  return new MongoStore({
+    client: mongoConnection.connection.getClient(),
+    touchAfter: 24 * 3600
+  });
+};
  
 app.set('view engine', 'ejs'); 
 app.set("views", path.join(process.cwd(), "views"));
