@@ -2,10 +2,12 @@ import { createServer } from 'http';
 
 import express from 'express';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import bodyParser from 'body-parser';
 import methodOverride from 'method-override';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from '../config/conexao.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,10 +26,18 @@ app.use(methodOverride('_method'));
 app.use(session({
   secret: 'pousada-secret-key-2024',
   resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
+  saveUninitialized: true,
+  store: new MongoStore({
+    mongoUrl: 'mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryWrites=true&w=majority&appName=Cluster0',
+    touchAfter: 24 * 3600
+  }),
+  cookie: { 
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
 }));
-//po
  
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
