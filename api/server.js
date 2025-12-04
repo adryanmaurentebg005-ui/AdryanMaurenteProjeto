@@ -38,9 +38,10 @@ app.use(session({
     sameSite: 'lax'
   }
 }));
-//po
- 
+
 app.use((req, res, next) => {
+  console.log('📍 Session ID:', req.sessionID);
+  console.log('👤 Session User:', req.session.user);
   res.locals.user = req.session.user || null;
   res.locals.isAdmin = req.session.user && req.session.user.tipo === 'admin';
   next();

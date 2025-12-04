@@ -23,7 +23,20 @@ router.post('/login', async (req, res, next) => {
       const user = await Hospede.findOne({ email, senha }).lean();
       if (user) {
         req.session.user = { id: String(user._id), nome: user.nome, email: user.email, tipo: user.tipo };
-        return res.redirect('/');
+        console.log('✅ Login successful, session user:', req.session.user);
+        req.session.save((err) => {
+          if (err) {
+            console.error('❌ Session save error:', err);
+            return res.render('auth/login', {
+              title: 'Login',
+              page: 'login',
+              error: 'Erro ao salvar sessão'
+            });
+          }
+          console.log('✅ Session saved to MongoDB');
+          return res.redirect('/');
+        });
+        return;
       }
     } 
 

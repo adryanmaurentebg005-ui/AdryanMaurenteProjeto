@@ -4,9 +4,13 @@ import { Hospede, Quarto, Reserva, Pagamento } from '../models/index.js';
 const router = express.Router();
 
 function requireAuth(req, res, next) {
+  console.log('🔍 requireAuth check - session.user:', req.session.user);
+  console.log('🔍 session id:', req.sessionID);
   if (!req.session.user) {
+    console.log('❌ No session user, redirecting to login');
     return res.redirect('/auth/login');
   }
+  console.log('✅ User authenticated:', req.session.user);
   next();
 }
 
