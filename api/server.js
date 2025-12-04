@@ -29,7 +29,8 @@ app.use(session({
   saveUninitialized: true,
   store: new MongoStore({
     mongoUrl: 'mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryWrites=true&w=majority&appName=Cluster0',
-    touchAfter: 24 * 3600
+    touchAfter: 24 * 3600,
+    dbName: 'pousada'
   }),
   cookie: { 
     maxAge: 24 * 60 * 60 * 1000,
@@ -45,6 +46,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 import indexRoutes from '../routes/index.js';
 import authRoutes from '../routes/auth.js';
 import quartosRoutes from '../routes/quartos.js';
@@ -58,6 +64,13 @@ app.use('/quartos', quartosRoutes);
 app.use('/reservas', reservasRoutes);
 app.use('/admin', adminRoutes);
 app.use('/perfil', perfilRoutes);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err.message);
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+});
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
