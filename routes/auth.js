@@ -4,135 +4,88 @@ import { Hospede } from '../models/index.js';
 
 const router = express.Router();
 
+// LOGIN GET
 router.get('/login', (req, res) => {
-  if (req.session.user) {
-    return res.redirect('/');
-  }
-  res.render('auth/login', {
-    title: 'Login',
-    page: 'login',
-    error: null
-  });
+  if (req.session.user) return res.redirect('/');
+  res.render('auth/login', { title: 'Login', error: null });
 });
 
-router.post('/login', async (req, res, next) => {
+// LOGIN POST
+router.post('/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
 
-    if (mongoose.connection.readyState === 1) {
-      const user = await Hospede.findOne({ email, senha }).lean();
-      console.log('VERCEL-DEBUG: POST /auth/login attempt for', email, 'mongooseReadyState=', mongoose.connection.readyState);
-      if (user) {
-        console.log('VERCEL-DEBUG: user found in DB ->', user.email, user._id);
-        req.session.user = { id: String(user._id), nome: user.nome, email: user.email, tipo: user.tipo };
-        // try to save session and log result (visible in Vercel function logs)
-        req.session.save((err) => {
-          if (err) {
-            console.error('VERCEL-DEBUG: session save error', err);
-            return res.render('auth/login', {
-              title: 'Login',
-              page: 'login',
-              error: 'Erro ao salvar sessão'
-            });
-          }
-          console.log('VERCEL-DEBUG: session saved, id=', req.sessionID);
-          // also log Set-Cookie header if accessible (Express will set it automatically)
-          return res.redirect('/');
-        });
-        return;
-      } else {
-        console.log('VERCEL-DEBUG: user NOT found for', email);
-      }
-    } 
+    if (mongoose.connection.readyState !== 1) {
+      return res.render('auth/login', { title: 'Login', error: "Erro de conexão!" });
+    }
 
-    return res.render('auth/login', {
-      title: 'Login',
-      page: 'login',
-      error: 'Email ou senha incorretos'
-    });
+    const user = await Hospede.findOne({ email, senha }).lean();
+
+    if (!user) {
+      return res.render('auth/login', { title: 'Login', error: 'Email ou senha incorretos' });
+    }
+
+    req.session.user = { id: String(user._id), nome: user.nome, email: user.email, tipo: user.tipo };
+
+    req.session.save(() => res.redirect('/'));
+
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.render('auth/login', { title: 'Login', error: 'Erro ao fazer login' });
   }
 });
 
+// CADASTRO GET
 router.get('/cadastro', (req, res) => {
-  if (req.session.user) {
-    return res.redirect('/');
-  }
-  res.render('auth/cadastro', {
-    title: 'Cadastro',
-    page: 'cadastro',
-    error: null,
-    success: null
-  });
+  if (req.session.user) return res.redirect('/');
+  res.render('auth/cadastro', { title: 'Cadastro', error: null, success: null });
 });
 
-router.post('/cadastro', async (req, res, next) => {
+// CADASTRO POST
+router.post('/cadastro', async (req, res) => {
   try {
     const { nome, email, senha, confirmarSenha } = req.body;
 
     if (senha !== confirmarSenha) {
-      return res.render('auth/cadastro', {
-        title: 'Cadastro',
-        page: 'cadastro',
-        error: 'As senhas não coincidem',
-        success: null 
-      });
+      return res.render('auth/cadastro', { title: 'Cadastro', error: 'As senhas não coincidem', success: null });
     }
 
     if (senha.length < 6) {
-      return res.render('auth/cadastro', {
-        title: 'Cadastro',
-        page: 'cadastro',
-        error: 'A senha deve ter pelo menos 6 caracteres',
-        success: null
-      });
+      return res.render('auth/cadastro', { title: 'Cadastro', error: 'A senha deve ter pelo menos 6 caracteres', success: null });
     }
 
     const exists = await Hospede.findOne({ email }).lean();
     if (exists) {
-      return res.render('auth/cadastro', {
-        title: 'Cadastro',
-        page: 'cadastro',
-        error: 'Este email já está cadastrado',
-        success: null
-      });
+      return res.render('auth/cadastro', { title: 'Cadastro', error: 'Este email já está cadastrado', success: null });
     }
 
-//const randomNumber = String(Math.floor(Math.random() * 1e11)).padStart(11, '0');
-const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; 
-let randomString = "";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; 
+    let randomString = "";
 
-for (let i = 0; i < 11; i++) {
-  randomString += chars.charAt(Math.floor(Math.random() * chars.length));
-}
+    for (let i = 0; i < 11; i++) {
+      randomString += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
 
-// Use a clear placeholder marker so we can treat it as "no CPF" elsewhere
-const placeholderCPF = `PLACEHOLDER-${randomString}`;
-
-    await Hospede.create({ 
-      nome, 
-      email, 
-      senha, 
-      tipo: 'cliente', 
+    await Hospede.create({
+      nome,
+      email,
+      senha,
+      tipo: 'cliente',
       dataCadastro: new Date(),
-      CPF: placeholderCPF
+      CPF: `PLACEHOLDER-${randomString}`
     });
-    
-    return res.render('auth/cadastro', {
-      title: 'Cadastro',
-      page: 'cadastro',
-      error: null,
-      success: 'Cadastro realizado com sucesso! Faça login para continuar.'
-    });
+
+    res.render('auth/cadastro', { title: 'Cadastro', error: null, success: 'Cadastro realizado com sucesso!' });
+
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.render('auth/cadastro', { title: 'Cadastro', error: 'Erro no cadastro', success: null });
   }
 });
 
+// LOGOUT
 router.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/');
+  req.session.destroy(() => res.redirect('/'));
 });
 
 export default router;

@@ -1,103 +1,67 @@
-import { createServer } from 'http';
+import express from "express";
+import session from "express-session";
+import MongoStore from "connect-mongo";
+import mongoose from "mongoose";
+import path from "path";
+import dotenv from "dotenv";
+import authRoutes from "../routes/auth.js";
 
-import express from 'express';
-import session from 'express-session';
-import MongoStore from 'connect-mongo';
-import bodyParser from 'body-parser';
-import methodOverride from 'method-override';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import mongoose from '../config/conexao.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const app = express();
-const PORT = 3111;
- 
-app.set('view engine', 'ejs'); 
-app.set("views", path.join(process.cwd(), "views"));
- 
-app.use(express.static(path.join(process.cwd(), 'public')));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json()); 
-app.use(methodOverride('_method'));
 
-const mongoUrl = process.env.MONGO_URL || 'mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryWrites=true&w=majority&appName=Cluster0';
+// ---------- CONFIGURAÇÃO DO SERVIDOR ----------
+app.set("view engine", "ejs");
+app.set("views", path.resolve("views"));
 
-app.use(session({
-  secret: 'pousada-secret-key-2024',
-  resave: false,
-  saveUninitialized: true,
-  store: MongoStore.create({ mongoUrl }),
-  cookie: { 
-    maxAge: 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+// Para processar form (POST)
+app.use(express.urlencoded({ extended: true }));
+
+// ---------- CONEXÃO COM MONGO ----------
+async function connectMongo() {
+  if (mongoose.connection.readyState !== 1) {
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log("MongoDB conectado (Vercel Serverless)");
   }
-}));
- 
-app.use((req, res, next) => {
-  res.locals.user = req.session.user || null;
-  res.locals.isAdmin = req.session.user && req.session.user.tipo === 'admin';
-  next();
-});
+}
+connectMongo();
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// ---------- CONFIGURAÇÃO DE SESSÃO (COMPATÍVEL COM VERCEL) ----------
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
+      secure: "auto",
+    },
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      ttl: 60 * 60 * 24 * 7, // 7 dias
+      autoRemove: "native",
+    }),
+  })
+);
 
-// Serve favicon for browsers requesting /favicon.ico
-app.get('/favicon.ico', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'favicon.png'));
-});
+// ---------- ROTAS ----------
+app.use("/auth", authRoutes);
 
-// Debug endpoint to inspect session and session store (temporary)
-app.get('/debug-session', async (req, res) => {
-  const sid = req.sessionID;
-  const cookie = req.headers && req.headers.cookie;
-  let sessionDoc = null;
-  try {
-    // connect-mongo stores sessions in collection named 'sessions' by default
-    const db = mongoose.connection.db;
-    if (db) {
-      sessionDoc = await db.collection('sessions').findOne({ _id: sid });
-    }
-  } catch (err) {
-    console.warn('DEBUG: error reading sessions collection', err && err.message);
-  }
-
-  res.json({
-    sessionID: sid,
-    cookieHeader: cookie || null,
-    sessionUser: req.session && req.session.user ? req.session.user : null,
-    sessionDoc
+app.get("/", (req, res) => {
+  res.render("index", {
+    title: "Home",
+    user: req.session.user || null,
   });
 });
 
-import indexRoutes from '../routes/index.js';
-import authRoutes from '../routes/auth.js';
-import quartosRoutes from '../routes/quartos.js';
-import reservasRoutes from '../routes/reservas.js';
-import adminRoutes from '../routes/admin.js';
-import perfilRoutes from '../routes/perfil.js';
-
-app.use('/', indexRoutes);
-app.use('/auth', authRoutes);
-app.use('/quartos', quartosRoutes);
-app.use('/reservas', reservasRoutes);
-app.use('/admin', adminRoutes);
-app.use('/perfil', perfilRoutes);
-
-// Global error handler
+// ---------- ERRO ----------
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.message);
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  console.error("Erro geral:", err);
+  res.status(500).send("Erro interno!");
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
+// ---------- EXPORT PARA VERCEL ----------
+export default app;
+export { connectMongo };
