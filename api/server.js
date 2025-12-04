@@ -49,6 +49,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Serve favicon for browsers requesting /favicon.ico
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'favicon.png'));
+});
+
 import indexRoutes from '../routes/index.js';
 import authRoutes from '../routes/auth.js';
 import quartosRoutes from '../routes/quartos.js';
