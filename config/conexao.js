@@ -4,6 +4,10 @@ const url = "mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryW
 
 async function conectar() {
   try {
+     await mongoose.connect(url, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     await mongoose.connect(url);
     console.log("✅ Conectado ao MongoDB Atlas!");
   } catch (erro) {
