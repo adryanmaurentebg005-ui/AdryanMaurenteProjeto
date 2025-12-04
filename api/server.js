@@ -23,15 +23,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); 
 app.use(methodOverride('_method'));
 
+const mongoUrl = process.env.MONGO_URL || 'mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryWrites=true&w=majority&appName=Cluster0';
+
 app.use(session({
   secret: 'pousada-secret-key-2024',
   resave: false,
   saveUninitialized: true,
-  store: new MongoStore({
-    mongoUrl: 'mongodb+srv://aluno:123@cluster0.ddqnr3p.mongodb.net/pousada?retryWrites=true&w=majority&appName=Cluster0',
-    touchAfter: 24 * 3600,
-    dbName: 'pousada'
-  }),
+  store: MongoStore.create({ mongoUrl }),
   cookie: { 
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
