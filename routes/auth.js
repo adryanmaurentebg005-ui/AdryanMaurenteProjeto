@@ -22,11 +22,13 @@ router.post('/login', async (req, res) => {
 
     if (mongoose.connection.readyState !== 1) {
       return res.render('auth/login', {
-        title: 'Login',
-        page: 'login',
-        user: req.session.user || null,
-        error: "Erro de conexão com o banco de dados!"
-      });
+  title: 'Login',
+  page: 'login',
+  user: req.session.user || null,
+  isAdmin: req.session.user ? req.session.user.tipo === 'admin' : false,
+  error: null
+});
+
     }
 
     const user = await Hospede.findOne({ email, senha }).lean();
