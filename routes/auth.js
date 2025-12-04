@@ -21,19 +21,27 @@ router.post('/login', async (req, res, next) => {
 
     if (mongoose.connection.readyState === 1) {
       const user = await Hospede.findOne({ email, senha }).lean();
+      console.log('VERCEL-DEBUG: POST /auth/login attempt for', email, 'mongooseReadyState=', mongoose.connection.readyState);
       if (user) {
+        console.log('VERCEL-DEBUG: user found in DB ->', user.email, user._id);
         req.session.user = { id: String(user._id), nome: user.nome, email: user.email, tipo: user.tipo };
+        // try to save session and log result (visible in Vercel function logs)
         req.session.save((err) => {
           if (err) {
+            console.error('VERCEL-DEBUG: session save error', err);
             return res.render('auth/login', {
               title: 'Login',
               page: 'login',
               error: 'Erro ao salvar sessão'
             });
           }
+          console.log('VERCEL-DEBUG: session saved, id=', req.sessionID);
+          // also log Set-Cookie header if accessible (Express will set it automatically)
           return res.redirect('/');
         });
         return;
+      } else {
+        console.log('VERCEL-DEBUG: user NOT found for', email);
       }
     } 
 

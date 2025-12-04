@@ -4,8 +4,16 @@ import { Hospede, Quarto, Reserva, Pagamento } from '../models/index.js';
 const router = express.Router();
 
 function requireAuth(req, res, next) {
+  // Debug info for Vercel: helps determine if session is present
+  try {
+    console.log('VERCEL-DEBUG: requireAuth sessionID=', req.sessionID, 'cookie=', req.headers && req.headers.cookie);
+    console.log('VERCEL-DEBUG: requireAuth session.user=', req.session && req.session.user);
+  } catch (e) {
+    console.warn('VERCEL-DEBUG: requireAuth logging failed', e && e.message);
+  }
+
   if (!req.session.user) {
-    return res.redirect('/auth/login');
+    return res.redirect('/');
   }
   next();
 }
